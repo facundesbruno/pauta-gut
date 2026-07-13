@@ -319,17 +319,30 @@ let _pendingNotifs=[];
 
 async function loadCloud(){
   if(!FB_URL){loadLocal();migrateJobs();render();autoStartJobs();return;}
+  // read local version
+  let localV=0;
+  try{const lraw=localStorage.getItem(SK);if(lraw){const ld=JSON.parse(lraw);localV=ld._v||0;}}catch(e){}
   try{
     const r=await fetch(FB_URL,{cache:'no-store'});
     if(r.ok){
       const d=await r.json();
-      if(d&&d.jobs&&d.jobs.length>0){
-        jobs=d.jobs;nextId=d.nextId||nextId;_cloudV=d._v||0;
+      const cloudV=d&&d._v||0;
+      if(d&&d.jobs&&d.jobs.length>0&&cloudV>=localV){
+        // cloud is newer or equal — use cloud
+        jobs=d.jobs;nextId=d.nextId||nextId;_cloudV=cloudV;
         saveLocal();migrateJobs();render();autoStartJobs();return;
       }
     }
   }catch(e){}
-  loadLocal();migrateJobs();render();autoStartJobs();
+  // local is newer — load local and push to cloud
+  loadLocal();
+  if(jobs.length>0&&FB_URL){
+    _cloudV=localV||Date.now();
+    const payload={jobs,nextId,_v:_cloudV};
+    fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(()=>setSaveUI('clean')).catch(()=>{});
+  }
+  migrateJobs();render();autoStartJobs();
 }
 
 async function pollCloud(){
