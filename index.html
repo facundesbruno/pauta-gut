@@ -330,7 +330,7 @@ async function loadCloud(){
       if(d&&d.jobs&&d.jobs.length>0&&cloudV>=localV){
         // cloud is newer or equal — use cloud
         jobs=d.jobs;nextId=d.nextId||nextId;_cloudV=cloudV;
-        saveLocal();migrateJobs();render();autoStartJobs();return;
+        saveLocal();migrateJobs();render();autoStartJobs();setSaveUI('clean');return;
       }
     }
   }catch(e){}
