@@ -6,10 +6,28 @@
 <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0C0C0C;--surface:#161616;--surface1:#1E1E1E;
-  --border:#282828;--border-strong:#383838;
-  --text:#F0EDE6;--text2:#908D87;--text3:#5C5A56;
-  --radius:10px;--accent:#8B83E0;
+  --bg:#000000;--surface:#111111;--surface1:#1C1C1C;
+  --border:#2A2A2A;--border-strong:#404040;
+  --text:#F2EFE8;--text2:#A0A09A;--text3:#686460;
+  --radius:10px;--accent:#9B94E8;
+  --st-pending-bg:#2A2820;--st-pending-tc:#A09060;
+  --st-active-bg:#2D2510;--st-active-tc:#C8860A;
+  --st-paused-bg:#101828;--st-paused-tc:#4A8CC4;
+  --st-done-bg:#0D2118;--st-done-tc:#2DB87A;
+  --urg-crit-bg:#A32D2D;--urg-crit-tc:#FCEBEB;
+  --urg-today-bg:#E24B4A;--urg-today-tc:#fff;
+  --urg-warn-bg:#EF9F27;--urg-warn-tc:#412402;
+  --urg-soon-bg:#C0DD9733;--urg-soon-tc:#27500A;
+}
+:root.light{
+  --bg:#F5F4F0;--surface:#FFFFFF;--surface1:#EFEDE6;
+  --border:#E2DFD7;--border-strong:#C8C5BB;
+  --text:#1A1917;--text2:#5C5955;--text3:#9B9892;
+  --accent:#534AB7;
+  --st-pending-bg:#F1EFE8;--st-pending-tc:#5F5E5A;
+  --st-active-bg:#FAEEDA;--st-active-tc:#633806;
+  --st-paused-bg:#E6F1FB;--st-paused-tc:#0C447C;
+  --st-done-bg:#EAF3DE;--st-done-tc:#3B6D11;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{font-family:'Work Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh}
@@ -26,7 +44,9 @@ html,body{font-family:'Work Sans',-apple-system,BlinkMacSystemFont,sans-serif;ba
 .fb.onp{font-weight:600;color:#0C447C;background:#E6F1FB;border-color:#185FA5}
 .fb.sel{font-weight:600;color:var(--text);background:var(--surface1)}
 .new-btn{font-size:12px;padding:7px 16px;border-radius:var(--radius);border:none;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;gap:5px;font-weight:600;flex-shrink:0}
-.new-btn:hover{background:#3C3489}
+.new-btn:hover{opacity:.85}
+.theme-btn{font-size:14px;padding:6px 10px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:transparent;cursor:pointer;color:var(--text2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,color .15s}
+.theme-btn:hover{background:var(--surface1);color:var(--text)}
 
 /* Save bar */
 .save-bar{display:flex;align-items:center;gap:8px;padding:.55rem 1rem;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--surface);font-size:12px;color:var(--text3);margin-bottom:1rem;transition:all .2s}
@@ -150,6 +170,7 @@ html,body{font-family:'Work Sans',-apple-system,BlinkMacSystemFont,sans-serif;ba
       <button class="fb" id="fb-pending" onclick="setF('pending')">Não Iniciados <span id="fb-pending-n"></span></button>
       <button class="fb" id="fb-done" onclick="setF('done')">Entregues <span id="fb-done-n"></span></button>
       <button class="fb" id="fb-all" onclick="setF('all')">Todos <span id="fb-all-n"></span></button>
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Alternar Tema"><i class="ti ti-sun" id="theme-icon"></i></button>
       <button class="new-btn" onclick="openModal(null)"><i class="ti ti-plus"></i> Novo Job</button>
     </div>
   </div>
@@ -268,10 +289,10 @@ const CR={
   Awards: {s:['#F1EFE8','#D3D1C7','#B4B2A9','#888780','#5F5E5A'],t:['#5F5E5A','#444441','#2C2C2A','#F1EFE8','#F1EFE8']},
 };
 const ST={
-  pending:{l:'Não Iniciado',bg:'#2A2820',tc:'#A09060',ic:'ti-clock'},
-  active: {l:'Em Andamento',bg:'#2D2510',tc:'#C8860A',ic:'ti-player-play'},
-  paused: {l:'Pausado',     bg:'#101828',tc:'#4A8CC4',ic:'ti-player-pause'},
-  done:   {l:'Entregue',   bg:'#0D2118',tc:'#2DB87A',ic:'ti-circle-check'},
+  pending:{l:'Não Iniciado',bg:'var(--st-pending-bg)',tc:'var(--st-pending-tc)',ic:'ti-clock'},
+  active: {l:'Em Andamento',bg:'var(--st-active-bg)', tc:'var(--st-active-tc)', ic:'ti-player-play'},
+  paused: {l:'Pausado',     bg:'var(--st-paused-bg)', tc:'var(--st-paused-tc)', ic:'ti-player-pause'},
+  done:   {l:'Entregue',   bg:'var(--st-done-bg)',   tc:'var(--st-done-tc)',   ic:'ti-circle-check'},
 };
 const CAP={alta:2};
 const WIN=[[9*60+30,12*60+30],[14*60,19*60+30]];
@@ -456,10 +477,10 @@ function uIdx(ds,st){const d=urgDays(ds,st);if(d===null)return 0;if(d<=0)return 
 function cc(cl){const r=CR[cl]||CR.Awards;return{bg:r.s[1],tx:r.t[1]};}
 function urg(ds,st){
   const d=urgDays(ds,st);if(d===null)return null;
-  if(d<0)return{l:`${Math.abs(d)}d atr.`,s:'background:#A32D2D;color:#FCEBEB'};
-  if(d===0)return{l:'hoje',s:'background:#E24B4A;color:#fff'};
-  if(d<=2)return{l:`${d}d`,s:'background:#EF9F27;color:#412402'};
-  if(d<=5)return{l:`${d}d`,s:'background:#C0DD9733;color:#27500A'};
+  if(d<0)return{l:`${Math.abs(d)}d atr.`,s:'background:var(--urg-crit-bg);color:var(--urg-crit-tc)'};
+  if(d===0)return{l:'hoje',s:'background:var(--urg-today-bg);color:var(--urg-today-tc)'};
+  if(d<=2)return{l:`${d}d`,s:'background:var(--urg-warn-bg);color:var(--urg-warn-tc)'};
+  if(d<=5)return{l:`${d}d`,s:'background:var(--urg-soon-bg);color:var(--urg-soon-tc)'};
   return null;
 }
 function sortByUrgency(arr){
@@ -781,6 +802,21 @@ autoStartJobs();
 loadCloud();
 window.addEventListener('focus',()=>{loadCloud();});
 setInterval(pollCloud, 30000);
+
+function toggleTheme(){
+  const isLight=document.documentElement.classList.toggle('light');
+  document.getElementById('theme-icon').className=isLight?'ti ti-moon':'ti ti-sun';
+  localStorage.setItem('pauta-theme',isLight?'light':'dark');
+}
+(function(){
+  if(localStorage.getItem('pauta-theme')==='light'){
+    document.documentElement.classList.add('light');
+    document.addEventListener('DOMContentLoaded',()=>{
+      const ic=document.getElementById('theme-icon');
+      if(ic)ic.className='ti ti-moon';
+    });
+  }
+})();
 
 // Re-renderiza automaticamente quando o dia vira
 let _lastDay=todayStr();
