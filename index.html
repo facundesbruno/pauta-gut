@@ -414,6 +414,8 @@ function migrateJobs(){
       j.members.forEach(mid=>{j.memberStatus[mid]=j.status;j.memberSessions[mid]=j.sessions?[...j.sessions]:[];});
     }
     // ensure new members added via modal also get defaults
+    if(!j.memberStatus)j.memberStatus={};
+    if(!j.memberSessions)j.memberSessions={};
     j.members.forEach(mid=>{
       if(!j.memberStatus[mid])j.memberStatus[mid]='pending';
       if(!j.memberSessions[mid])j.memberSessions[mid]=[];
