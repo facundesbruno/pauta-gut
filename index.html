@@ -4,6 +4,9 @@
 <title>Pauta Time 3S</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.30.0/dist/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
 <style>
 :root{
   --bg:#000000;--surface:#111111;--surface1:#1C1C1C;
@@ -47,6 +50,25 @@ html,body{font-family:'Work Sans',-apple-system,BlinkMacSystemFont,sans-serif;ba
 .new-btn:hover{opacity:.85}
 .theme-btn{font-size:14px;padding:6px 10px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:transparent;cursor:pointer;color:var(--text2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,color .15s}
 .theme-btn:hover{background:var(--surface1);color:var(--text)}
+
+/* Flatpickr theming */
+.flatpickr-calendar{background:var(--surface)!important;border:0.5px solid var(--border-strong)!important;border-radius:12px!important;box-shadow:0 8px 32px rgba(0,0,0,.28)!important;font-family:'Work Sans',sans-serif!important;color:var(--text)!important}
+.flatpickr-month{background:transparent!important;color:var(--text)!important;fill:var(--text)!important}
+.flatpickr-current-month,.flatpickr-current-month .flatpickr-monthDropdown-months{color:var(--text)!important;background:transparent!important;font-family:inherit!important;font-weight:600}
+.flatpickr-current-month input.cur-year{color:var(--text)!important}
+.flatpickr-prev-month svg,.flatpickr-next-month svg{fill:var(--text2)!important}
+.flatpickr-prev-month:hover svg,.flatpickr-next-month:hover svg{fill:var(--text)!important}
+.flatpickr-weekday{color:var(--text3)!important;background:transparent!important;font-family:inherit!important;font-weight:500}
+.flatpickr-weekdays{background:transparent!important}
+.flatpickr-day{color:var(--text)!important;border-radius:8px!important;font-family:inherit!important}
+.flatpickr-day:hover{background:var(--surface1)!important;border-color:transparent!important}
+.flatpickr-day.today{border-color:var(--accent)!important;color:var(--accent)!important;font-weight:600}
+.flatpickr-day.today:hover{background:var(--surface1)!important}
+.flatpickr-day.selected,.flatpickr-day.selected:hover{background:var(--accent)!important;border-color:var(--accent)!important;color:#fff!important}
+.flatpickr-day.flatpickr-disabled{color:var(--text3)!important;opacity:.35!important}
+.flatpickr-monthDropdown-months option{background:var(--surface)!important;color:var(--text)!important}
+.numInputWrapper span.arrowUp:after{border-bottom-color:var(--text2)!important}
+.numInputWrapper span.arrowDown:after{border-top-color:var(--text2)!important}
 
 /* Save bar */
 .save-bar{display:flex;align-items:center;gap:8px;padding:.55rem 1rem;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--surface);font-size:12px;color:var(--text3);margin-bottom:1rem;transition:all .2s}
@@ -474,6 +496,29 @@ function cMember(j,mid){let reg=0,ot=0;((j.memberSessions||{})[mid]||[]).forEach
 function clsMSess(j,mid){const arr=(j.memberSessions||{})[mid]||[];const l=arr[arr.length-1];if(l&&!l.end)l.end=new Date().toISOString();}
 function urgDays(ds,st){if(st==='done'||!ds)return null;return Math.round((new Date(ds+'T12:00:00')-getToday())/86400000);}
 function uIdx(ds,st){const d=urgDays(ds,st);if(d===null)return 0;if(d<=0)return 4;if(d<=2)return 3;if(d<=4)return 2;return 1;}
+function weekBounds(){
+  const d=getToday();const day=d.getDay()||7;
+  const mon=new Date(d);mon.setDate(d.getDate()-(day-1));mon.setHours(0,0,0,0);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);
+  return{mon,sun};
+}
+function cMemberWeek(j,mid){
+  const{mon,sun}=weekBounds();let mins=0;
+  ((j.memberSessions||{})[mid]||[]).forEach(s=>{
+    if(!s.start)return;
+    const st=new Date(s.start),en=s.end?new Date(s.end):new Date();
+    if(en<mon||st>sun)return;
+    mins+=Math.max(0,(Math.min(en.getTime(),sun.getTime())-Math.max(st.getTime(),mon.getTime()))/60000);
+  });
+  return Math.round(mins);
+}
+function memberActBtns(j,mid){
+  const ms=(j.memberStatus||{})[mid]||'pending';
+  if(ms==='pending')return`<button class="abtn start" onclick="startM(${j.id},'${mid}',event)"><i class="ti ti-player-play" style="font-size:9px"></i> Iniciar</button>`;
+  if(ms==='active')return`<button class="abtn pause" onclick="pauseM(${j.id},'${mid}',event)"><i class="ti ti-player-pause" style="font-size:9px"></i> Pausar</button><button class="abtn deliver" onclick="deliverM(${j.id},'${mid}',event)" title="Entregar"><i class="ti ti-circle-check" style="font-size:9px"></i></button>`;
+  if(ms==='paused')return`<button class="abtn resume" onclick="resumeM(${j.id},'${mid}',event)"><i class="ti ti-player-play" style="font-size:9px"></i> Retomar</button><button class="abtn deliver" onclick="deliverM(${j.id},'${mid}',event)" title="Entregar"><i class="ti ti-circle-check" style="font-size:9px"></i></button>`;
+  return`<button class="abtn reopen" onclick="reopenM(${j.id},'${mid}',event)"><i class="ti ti-refresh" style="font-size:9px"></i> Reabrir</button>`;
+}
 function cc(cl){const r=CR[cl]||CR.Awards;return{bg:r.s[1],tx:r.t[1]};}
 function urg(ds,st){
   const d=urgDays(ds,st);if(d===null)return null;
@@ -608,7 +653,18 @@ function openModal(jid){
   document.getElementById('f-members').innerHTML=MEMBERS.map(m=>`<option value="${m.id}"${j&&j.members.includes(m.id)?' selected':''}>${m.name}</option>`).join('');
   document.getElementById('modal-del').style.display=j?'flex':'none';
   document.getElementById('modal-overlay').classList.add('open');
-  setTimeout(()=>document.getElementById('f-title').focus(),60);
+  setTimeout(()=>{
+    document.getElementById('f-title').focus();
+    if(typeof flatpickr!=='undefined'){
+      const fpOpts={locale:flatpickr.l10ns.pt,dateFormat:'Y-m-d',allowInput:true};
+      ['f-startDate','f-date','f-tp','f-dBrasil'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(!el)return;
+        if(el._flatpickr)el._flatpickr.destroy();
+        flatpickr(el,fpOpts);
+      });
+    }
+  },60);
 }
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
 function saveModal(){
@@ -732,26 +788,35 @@ function rMembers(){
     let mj=fj.filter(j=>j.members.includes(m.id));
     if(!mj.length&&filt!=='all')return;
     mj=sortByUrgency(mj);
+    const wkTotal=mj.reduce((a,j)=>a+cMemberWeek(j,m.id),0);
     html+=`<div style="margin-bottom:1.25rem">
       <div style="display:flex;align-items:center;gap:9px;padding:.5rem 0;border-bottom:0.5px solid var(--border);margin-bottom:2px">
         <span style="width:28px;height:28px;border-radius:50%;background:${m.bg};color:${m.tc};display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${m.ini}</span>
         <span style="font-size:13px;font-weight:600">${m.name}</span>
         <span style="font-size:11px;color:var(--text3)">${m.role}</span>
-        <span style="margin-left:auto;font-size:11px;color:var(--text3)">${mj.length} Job${mj.length!==1?'s':''}</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--text3)">${mj.length} Job${mj.length!==1?'s':''}${wkTotal>0?` · <strong style="color:var(--text)">${fH(wkTotal)} esta semana</strong>`:''}</span>
       </div>
       ${mj.map(j=>{
-        const{bg,tx}=cc(j.cl),u=urg(j.date,j.status),ds=j.date?fD(j.date):'TBD',sm=ST[j.status];
+        const{bg,tx}=cc(j.cl),u=urg(j.date,j.status),ds=j.date?fD(j.date):'TBD';
+        const msSt=(j.memberStatus||{})[m.id]||'pending',msM=ST[msSt];
+        const wkH=cMemberWeek(j,m.id);
         const others=j.members.filter(id=>id!==m.id).map(id=>{const o=MEMBERS.find(x=>x.id===id);return o?`<span style="width:16px;height:16px;border-radius:50%;background:${o.bg};color:${o.tc};display:inline-flex;align-items:center;justify-content:center;font-size:7px;font-weight:700" title="${o.name}">${o.ini}</span>`:''}).join('');
-        return`<div style="display:flex;align-items:center;gap:8px;padding:.5rem .25rem;border-bottom:0.5px solid var(--border);cursor:pointer" onclick="openDet(${j.id})">
-          <span style="width:8px;height:8px;border-radius:50%;background:${bg};flex-shrink:0"></span>
-          <span style="flex:1;font-size:13px;font-weight:500;${j.status==='done'?'text-decoration:line-through;color:var(--text3)':''}">${j.title}</span>
-          ${others?`<div style="display:flex;gap:2px">${others}</div>`:''}
-          <span class="cltag" style="background:${bg};color:${tx}">${j.cl}</span>
-          <span style="font-size:11px;color:var(--text3);white-space:nowrap">${ds}</span>
-          ${u?`<span class="urgl" style="${u.s}">${u.l}</span>`:''}
-          <span class="spill" style="background:${sm.bg};color:${sm.tc};font-size:9px">${sm.l}</span>
-          <button onclick="event.stopPropagation();openModal(${j.id})" title="Editar" style="border:none;background:transparent;cursor:pointer;color:var(--text3);padding:2px 5px;font-size:11px"><i class="ti ti-pencil"></i></button>
-          <button onclick="event.stopPropagation();if(confirm('Excluir este job?'))deleteJob(${j.id})" title="Excluir" style="border:none;background:transparent;cursor:pointer;color:#E24B4A;padding:2px 5px;font-size:11px"><i class="ti ti-trash"></i></button>
+        return`<div style="padding:.5rem .25rem;border-bottom:0.5px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:5px" onclick="openDet(${j.id})">
+            <span style="width:8px;height:8px;border-radius:50%;background:${bg};flex-shrink:0"></span>
+            <span style="flex:1;font-size:13px;font-weight:500;${msSt==='done'?'text-decoration:line-through;color:var(--text3)':''}">${j.title}</span>
+            ${others?`<div style="display:flex;gap:2px">${others}</div>`:''}
+            <span class="cltag" style="background:${bg};color:${tx}">${j.cl}</span>
+            <span style="font-size:11px;color:var(--text3);white-space:nowrap">${ds}</span>
+            ${u?`<span class="urgl" style="${u.s}">${u.l}</span>`:''}
+            <button onclick="event.stopPropagation();openModal(${j.id})" title="Editar" style="border:none;background:transparent;cursor:pointer;color:var(--text3);padding:2px 5px;font-size:11px"><i class="ti ti-pencil"></i></button>
+            <button onclick="event.stopPropagation();if(confirm('Excluir este job?'))deleteJob(${j.id})" title="Excluir" style="border:none;background:transparent;cursor:pointer;color:#E24B4A;padding:2px 5px;font-size:11px"><i class="ti ti-trash"></i></button>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding-left:16px" onclick="event.stopPropagation()">
+            <span class="spill" style="background:${msM.bg};color:${msM.tc};font-size:9px"><i class="ti ${msM.ic}" style="font-size:8px"></i> ${msM.l}</span>
+            ${wkH>0?`<span style="font-size:10px;color:var(--text3)">${fH(wkH)} esta semana</span>`:''}
+            <div style="margin-left:auto;display:flex;gap:3px">${memberActBtns(j,m.id)}</div>
+          </div>
         </div>`;
       }).join('')}
       <button class="add-btn" onclick="openModal(null)" style="margin-top:4px"><i class="ti ti-plus"></i> Adicionar Job</button>
@@ -781,13 +846,39 @@ function rByJob(){
 }
 
 function rReport(){
-  const TODAY=getToday(),tReg=jobs.reduce((a,j)=>a+cJob(j).reg,0),tOt=jobs.reduce((a,j)=>a+cJob(j).ot,0);
-  let html=`<div style="margin-bottom:1rem"><div style="font-size:17px;font-weight:600">Relatório — ${TODAY.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</div><div style="font-size:12px;color:var(--text3);margin-top:3px">Expediente total: <strong style="color:#1D9E75">${fH(tReg)}</strong>${tOt>0?` · Fora: <strong style="color:#A32D2D">${fH(tOt)}</strong>`:''} · ${jobs.length} jobs</div></div>`;
+  const TODAY=getToday();
+  const{mon,sun}=weekBounds();
+  const wkLabel=mon.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'})+' – '+sun.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
+  let html=`<div style="margin-bottom:1.25rem"><div style="font-size:17px;font-weight:600">Relatório Semanal</div><div style="font-size:12px;color:var(--text3);margin-top:3px">${wkLabel}</div></div>`;
   MEMBERS.forEach(m=>{
     const mj=jobs.filter(j=>j.members.includes(m.id));if(!mj.length)return;
-    const mR=mj.reduce((a,j)=>a+Math.round(cJob(j).reg/j.members.length),0);
-    const mO=mj.reduce((a,j)=>a+Math.round(cJob(j).ot/j.members.length),0);
-    html+=`<div style="background:var(--surface);border:0.5px solid var(--border);border-radius:14px;margin-bottom:9px;overflow:hidden"><div style="display:flex;align-items:center;gap:9px;padding:.65rem 1rem;border-bottom:0.5px solid var(--border)"><div class="av" style="background:${m.bg};color:${m.tc};width:30px;height:30px;font-size:10px">${m.ini}</div><div><div style="font-size:13px;font-weight:600">${m.name}</div><div style="font-size:11px;color:var(--text3)">${m.role}</div></div><div style="margin-left:auto;text-align:right"><div style="font-size:14px;font-weight:700;color:#1D9E75">${fH(mR)}</div>${mO>0?`<div style="font-size:11px;color:#A32D2D">+${fH(mO)} fora</div>`:''}</div></div><div style="padding:.5rem 1rem;display:flex;flex-direction:column;gap:4px">${mj.map(j=>{const{bg,tx}=cc(j.cl),sm=ST[j.status];return`<div style="display:flex;align-items:center;gap:7px;font-size:12px;padding:.3rem .4rem;border-radius:var(--radius)"><span class="cltag" style="background:${bg};color:${tx}">${j.cl}</span><span style="flex:1;color:${j.status==='done'?'var(--text3)':'var(--text)'}">${j.title}</span><span class="spill" style="background:${sm.bg};color:${sm.tc};font-size:9px">${sm.l}</span></div>`;}).join('')}</div></div>`;
+    const weekMins=mj.reduce((a,j)=>a+cMemberWeek(j,m.id),0);
+    const totalMins=mj.reduce((a,j)=>a+cMember(j,m.id).total,0);
+    const weekJobs=mj.map(j=>({j,mins:cMemberWeek(j,m.id)})).filter(x=>x.mins>0).sort((a,b)=>b.mins-a.mins);
+    const pendingJobs=mj.filter(j=>cMemberWeek(j,m.id)===0&&j.status!=='done');
+    html+=`<div style="background:var(--surface);border:0.5px solid var(--border);border-radius:14px;margin-bottom:9px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:9px;padding:.65rem 1rem;border-bottom:0.5px solid var(--border)">
+        <div class="av" style="background:${m.bg};color:${m.tc};width:30px;height:30px;font-size:10px">${m.ini}</div>
+        <div><div style="font-size:13px;font-weight:600">${m.name}</div><div style="font-size:11px;color:var(--text3)">${m.role}</div></div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-size:18px;font-weight:700;color:var(--text)">${weekMins>0?fH(weekMins):'—'}</div>
+          <div style="font-size:10px;color:var(--text3)">esta semana${totalMins>0?` · ${fH(totalMins)} total`:''}</div>
+        </div>
+      </div>
+      <div style="padding:.5rem 1rem;display:flex;flex-direction:column;gap:3px">
+        ${weekJobs.length?weekJobs.map(({j,mins})=>{
+          const{bg,tx}=cc(j.cl),msSt=(j.memberStatus||{})[m.id]||j.status,sm=ST[msSt];
+          const pct=totalMins>0?Math.round(mins/totalMins*100):0;
+          return`<div style="display:flex;align-items:center;gap:7px;font-size:12px;padding:.35rem .4rem;border-radius:var(--radius);background:var(--surface1)">
+            <span class="cltag" style="background:${bg};color:${tx}">${j.cl}</span>
+            <span style="flex:1;color:var(--text);font-weight:500">${j.title}</span>
+            <span class="spill" style="background:${sm.bg};color:${sm.tc};font-size:9px">${sm.l}</span>
+            <span style="font-size:12px;font-weight:700;color:#1D9E75;min-width:36px;text-align:right">${fH(mins)}</span>
+          </div>`;
+        }).join(''):`<div style="font-size:12px;color:var(--text3);padding:.35rem .4rem">Sem horas registradas esta semana.</div>`}
+        ${pendingJobs.length?`<div style="font-size:11px;color:var(--text3);padding:.3rem .4rem;margin-top:2px;border-top:0.5px solid var(--border)">Ainda em aberto: ${pendingJobs.map(j=>`<strong>${j.title}</strong>`).join(', ')}</div>`:''}
+      </div>
+    </div>`;
   });
   document.getElementById('repview').innerHTML=html;
 }
