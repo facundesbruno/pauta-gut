@@ -668,8 +668,10 @@ function openModal(jid){
       ['f-startDate','f-date','f-tp','f-dBrasil'].forEach(id=>{
         const el=document.getElementById(id);
         if(!el)return;
+        const prev=el.value;
         if(el._flatpickr)el._flatpickr.destroy();
-        flatpickr(el,fpOpts);
+        const fp=flatpickr(el,fpOpts);
+        if(prev)fp.setDate(prev,false);
       });
     }
   },60);
@@ -721,7 +723,7 @@ function buildBars(jbs,pct,TL_START,TL_END){
     else if(j.startDate)bSRaw=new Date(j.startDate+'T09:30:00').getTime();
     else if(j.date)bSRaw=new Date(j.date+'T09:30:00').getTime()-3*86400000;
     else bSRaw=getToday().getTime();
-    const dlMs=j.date?new Date(j.date+'T19:30:00').getTime():null;
+    const dlMs=j.date?new Date(j.date+'T19:30:00').getTime():j.dateBrasil?new Date(j.dateBrasil+'T19:30:00').getTime():null;
     const bERaw=dlMs||TL_END.getTime();
     const cS=Math.max(bSRaw,TL_START.getTime()),cE=Math.min(bERaw,TL_END.getTime());
     if(cS>=cE)return null;
