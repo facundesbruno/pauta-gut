@@ -1,0 +1,535 @@
+<style>
+#dash-root { --dash-gutter: clamp(16px, 3vw, 32px); }
+.fz { max-width: 1120px; margin-inline: auto; font-family: var(--font-anthropic-sans); display: grid; gap: var(--cds-gap-xl); padding-block: var(--cds-pad-md) var(--cds-pad-xl); }
+.fz-head { display: grid; gap: var(--cds-gap-sm); }
+.fz-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; text-wrap: balance; }
+.fz-take { font-size: var(--cds-font-size-body); color: var(--color-fg); max-width: 68ch; line-height: 1.5; margin: 0; }
+.fz .fz-take b, .fz .fz-num b { font-weight: 600; }
+.fz-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; line-height: 1.45; }
+.fz-bar { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; }
+.fz-pill { font: inherit; font-size: var(--cds-font-size-caption); padding: 6px 12px; border-radius: 999px; border: 1px solid var(--color-border-line); background: var(--color-panel); color: var(--color-fg); cursor: pointer; font-variant-numeric: tabular-nums; }
+.fz-pill[aria-pressed="true"] { background: var(--color-fg); color: var(--color-bg); border-color: var(--color-fg); }
+.fz-pill:focus-visible, .fz-search:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+.fz-play { margin-left: auto; }
+.fz-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: var(--cds-gap-md); }
+.fz-kpi { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: var(--cds-gap-xs); align-content: start; min-height: 9.5rem; }
+.fz-kpi-label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); text-transform: uppercase; letter-spacing: .06em; }
+.fz-kpi-value { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: calc(var(--cds-font-size-title) * 1.25); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.fz-kpi-sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); line-height: 1.4; }
+.fz-up-bad { color: var(--color-bad); } .fz-down-good { color: var(--color-ok); } .fz-warn { color: var(--color-warn); } .fz-ok { color: var(--color-ok); }
+.fz-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); gap: var(--cds-gap-md); }
+.fz-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: var(--cds-gap-sm); align-content: start; min-width: 0; }
+.fz-card h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; text-wrap: balance; }
+.fz-chart { position: relative; min-height: 220px; }
+.fz-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.fz-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.fz-sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.fz-sw-line { width: 14px; height: 0; border-top: 2px dashed var(--color-fg-muted); display: inline-block; }
+.fz-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; z-index: 2; font-variant-numeric: tabular-nums; }
+.fz-tip-h { color: var(--cds-text-secondary); margin-bottom: 2px; }
+.fz-cuts { display: grid; gap: var(--cds-gap-sm); margin: 0; padding: 0; list-style: none; }
+.fz-cut { display: grid; grid-template-columns: 1fr auto; gap: 2px var(--cds-gap-md); padding-block: var(--cds-pad-sm); border-top: 1px solid var(--color-border-line); }
+.fz-cut:first-child { border-top: 0; }
+.fz-cut-name { font-weight: 600; }
+.fz-cut-save { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-heading); color: var(--color-ok); font-variant-numeric: tabular-nums; text-align: right; }
+.fz-cut-how { grid-column: 1 / -1; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); line-height: 1.45; }
+.fz-cut-meta { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
+.fz-sum { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--cds-gap-sm); padding: var(--cds-pad-md); border-radius: var(--cds-radius); border: 1px solid var(--color-border-line); }
+.fz-search { font: inherit; font-size: var(--cds-font-size-caption); padding: 6px 10px; border-radius: var(--cds-radius); border: 1px solid var(--color-border-line); background: var(--color-bg); color: var(--color-fg); width: min(100%, 18rem); }
+.fz-tablebox { max-height: 30rem; overflow: auto; }
+.fz-table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+.fz-table th { position: sticky; top: 0; background: var(--color-panel); text-align: left; font-weight: 600; color: var(--color-fg-muted); padding: 6px 8px; border-bottom: 1px solid var(--color-border-line); }
+.fz-table th button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.fz-table td { padding: 7px 8px; border-bottom: 1px solid var(--color-border-line); vertical-align: top; }
+.fz-table .num { text-align: right; white-space: nowrap; }
+.fz-tag { display: inline-block; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--color-border-line); white-space: nowrap; }
+@media (max-width: 560px) { .fz-hide-sm { display: none; } }
+[data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+[data-dash-source-state=empty] { color: transparent; }
+@media (prefers-reduced-motion: no-preference) {
+  .fz-in { animation: fzIn var(--cds-dur-slow) var(--cds-ease-out) both; }
+  @keyframes fzIn { from { opacity: .2; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+}
+</style>
+
+<div class="fz">
+  <header class="fz-head" id="topo">
+    <h1 class="fz-title">Finanças do Bruno</h1>
+    <p class="fz-take dash-skeleton" id="takeaway">—</p>
+    <div class="fz-bar" id="meses" aria-label="Escolha o mês"></div>
+    <p class="fz-note" id="nota-mes"></p>
+  </header>
+
+  <section class="fz-kpis" id="kpis" aria-label="Resumo do mês">
+    <div class="fz-kpi">
+      <span class="fz-kpi-label">Gasto no mês</span>
+      <span class="fz-kpi-value dash-skeleton" id="k-total" data-source="resumo" data-field="total">—</span>
+      <span class="fz-kpi-sub" id="k-total-sub"></span>
+    </div>
+    <div class="fz-kpi">
+      <span class="fz-kpi-label">Sobrou do salário</span>
+      <span class="fz-kpi-value dash-skeleton" id="k-sobra" data-source="resumo" data-field="sobra">—</span>
+      <span class="fz-kpi-sub"><span id="k-taxa" data-source="resumo" data-field="taxa">—</span> do salário de <span id="k-sal" data-source="resumo" data-field="salario">—</span></span>
+    </div>
+    <div class="fz-kpi">
+      <span class="fz-kpi-label">Meta: guardar 20%</span>
+      <span class="fz-kpi-value dash-skeleton" id="k-meta" data-source="resumo" data-field="meta">—</span>
+      <span class="fz-kpi-sub" id="k-gap-line">Faltaram <b id="k-gap" data-source="resumo" data-field="gap">—</b> para a meta</span>
+    </div>
+    <div class="fz-kpi">
+      <span class="fz-kpi-label">Dá para cortar</span>
+      <span class="fz-kpi-value dash-skeleton" id="k-corte" data-source="resumo" data-field="corte">—</span>
+      <span class="fz-kpi-sub">por mês, sem mexer em moradia, parcelas ou viagens</span>
+    </div>
+  </section>
+
+  <div class="fz-grid">
+    <section class="fz-card" id="categorias">
+      <h2>Para onde foi o dinheiro</h2>
+      <p class="fz-note">Gasto por categoria no mês escolhido. O traço mostra o mês anterior.</p>
+      <div class="fz-legend" id="leg-cat"></div>
+      <div class="fz-chart" id="ch-cat" data-source="categorias"></div>
+    </section>
+
+    <section class="fz-card" id="cortes">
+      <h2>O que cortar</h2>
+      <p class="fz-note">Corte sugerido por categoria, aplicado ao que você gastou. Moradia, parcelas, viagens e gastos avulsos ficam de fora.</p>
+      <div class="fz-sum" id="cut-sum">
+        <span>Economia possível: <b id="cut-total" data-source="resumo" data-field="corte">—</b>/mês</span>
+        <span id="cut-verdict" class="fz-note"></span>
+      </div>
+      <ul class="fz-cuts" id="cut-list"></ul>
+    </section>
+  </div>
+
+  <div class="fz-grid">
+    <section class="fz-card" id="fixo-variavel">
+      <h2>Fixo vs. variável, mês a mês</h2>
+      <p class="fz-note" id="fv-note">Fixos: moradia, telefone, assinaturas e parcelas. Variáveis: todo o resto.</p>
+      <div class="fz-legend" id="leg-fv"></div>
+      <div class="fz-chart" id="ch-fv" data-source="resumo"></div>
+    </section>
+
+    <section class="fz-card" id="poupanca">
+      <h2>Quanto guardar</h2>
+      <p class="fz-note">Meta: 20% do salário todo mês. Barra verde = meta batida.</p>
+      <div class="fz-legend" id="leg-sv"></div>
+      <div class="fz-chart" id="ch-sv" data-source="resumo"></div>
+      <p class="fz-note" id="sv-note"></p>
+    </section>
+  </div>
+
+  <section class="fz-card" id="maiores">
+    <h2>Maiores gastos do mês</h2>
+    <div class="fz-bar">
+      <input class="fz-search" id="busca" type="search" placeholder="Buscar estabelecimento ou categoria" aria-label="Buscar lançamentos">
+      <span class="fz-note" id="busca-info"></span>
+    </div>
+    <div class="fz-tablebox">
+      <table class="fz-table" id="tabela" data-source="lancamentos" data-row-key="id">
+        <thead><tr>
+          <th data-field="data" class="fz-hide-sm"><button data-k="data">Data</button></th>
+          <th data-field="descricao"><button data-k="descricao">Onde</button></th>
+          <th data-field="categoria"><button data-k="categoria">Categoria</button></th>
+          <th data-field="natureza" class="fz-hide-sm"><button data-k="natureza">Tipo</button></th>
+          <th data-field="origem" class="fz-hide-sm"><button data-k="origem">Pago com</button></th>
+          <th data-field="valor" class="num" aria-sort="descending"><button data-k="valor">Valor</button></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+dash.calc('resumo', {
+  inputs: ['lancamentos', 'meses'],
+  title: 'Resumo por mês',
+  description: 'Gasto total, fixo e variável, sobra, meta de 20% do salário e corte possível, por mês.',
+  fn: (lancamentos, meses) => meses.map(m => {
+    const doMes = lancamentos.filter(r => r.mes === m.mes);
+    const soma = f => doMes.filter(f).reduce((a, r) => a + Number(r.valor), 0);
+    const r2 = v => Math.round(v * 100) / 100;
+    const salario = Number(m.salario);
+    const total = soma(() => true);
+    const fixo = soma(r => r.natureza === 'Fixo');
+    const sobra = salario - total;
+    const meta = salario * 0.2;
+    return {
+      mes: m.mes, label: m.label, nota: m.nota, salario,
+      total: r2(total), fixo: r2(fixo), variavel: r2(total - fixo),
+      fixo_pct: fixo / salario, variavel_pct: (total - fixo) / salario,
+      sobra: r2(sobra), taxa: sobra / salario, meta: r2(meta), gap: r2(Math.max(0, meta - sobra)),
+      corte: r2(doMes.reduce((a, r) => a + Number(r.valor) * Number(r.corte_pct), 0)),
+      pontual: r2(soma(r => r.categoria === 'Viagem' || r.categoria === 'Serviços & avulsos'))
+    };
+  })
+});
+
+dash.calc('categorias', {
+  inputs: ['lancamentos'],
+  title: 'Gasto por categoria',
+  description: 'Soma por mês e categoria, com o corte sugerido em reais.',
+  fn: (lancamentos) => {
+    const g = new Map();
+    for (const r of lancamentos) {
+      const chave = r.mes + '|' + r.categoria;
+      const c = g.get(chave) || { chave, mes: r.mes, categoria: r.categoria, natureza: r.natureza, corte_pct: Number(r.corte_pct), total: 0 };
+      c.total += Number(r.valor);
+      g.set(chave, c);
+    }
+    return [...g.values()].map(c => ({ ...c, total: Math.round(c.total * 100) / 100, economia: Math.round(c.total * c.corte_pct * 100) / 100 }));
+  }
+});
+
+(() => {
+  const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+  const brl0 = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  const pct = new Intl.NumberFormat('pt-BR', { style: 'percent', maximumFractionDigits: 1 });
+  const mil = v => 'R$ ' + new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(v / 1000) + ' mil';
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const DUR = reduce ? 0 : 750;
+  const $ = id => document.getElementById(id);
+  const where = (k, v) => k + '=' + encodeURIComponent(v);
+
+  const COMO = {
+    'Delivery': 'Pedidos de iFood e Keeta quase toda semana. Limite a um pedido por semana e cozinhe no resto.',
+    'Bares, restaurantes & eventos': 'É a maior despesa variável. Defina um teto mensal para saídas e escolha os programas que valem a pena.',
+    'Compras online': 'Muitas compras pequenas no Mercado Livre. Deixe no carrinho 48 horas antes de fechar.',
+    'Transporte': 'Uber em dias seguidos. Agrupe trajetos e use metrô quando der.',
+    'Telefone & internet': 'Duas operadoras somam quase R$ 350. Renegocie o plano da TIM ou junte tudo numa só.',
+    'Vestuário': 'Compre por necessidade, não por ocasião. Uma peça por mês já reduz pela metade.',
+    'Mercado': 'O Rappi cobra mais que o mercado físico. Troque parte das compras por uma ida semanal.'
+  };
+
+  let sel = null, prevKey = null, playTimer = null, sortK = 'valor', sortDir = -1, started = false;
+  const tip = (host) => {
+    let t = host.querySelector('.fz-tip');
+    if (!t) { t = document.createElement('div'); t.className = 'fz-tip'; t.hidden = true; host.appendChild(t); }
+    return t;
+  };
+  const showTip = (host, e, head, lines) => {
+    const t = tip(host); t.replaceChildren();
+    const h = document.createElement('div'); h.className = 'fz-tip-h'; h.textContent = head; t.appendChild(h);
+    for (const [sw, name, val] of lines) {
+      const d = document.createElement('div'); d.style.display = 'flex'; d.style.alignItems = 'center'; d.style.gap = '6px';
+      if (sw) { const s = document.createElement('span'); s.className = 'fz-sw'; s.style.background = sw; d.appendChild(s); }
+      const n = document.createElement('span'); n.textContent = name; d.appendChild(n);
+      const v = document.createElement('b'); v.textContent = val; v.style.marginLeft = 'auto'; v.style.paddingLeft = '10px'; d.appendChild(v);
+      t.appendChild(d);
+    }
+    t.hidden = false;
+    const r = host.getBoundingClientRect(), tw = t.offsetWidth, th = t.offsetHeight;
+    let x = e.clientX - r.left + 12, y = e.clientY - r.top - th - 8;
+    if (x + tw > r.width) x = Math.max(0, e.clientX - r.left - tw - 12);
+    if (y < 0) y = e.clientY - r.top + 14;
+    t.style.left = x + 'px'; t.style.top = y + 'px';
+  };
+  const hideTip = host => { const t = host.querySelector('.fz-tip'); if (t) t.hidden = true; };
+
+  const countTo = (el, value, fmt) => {
+    const from = Number(el.dataset.v ?? value);
+    el.dataset.v = value;
+    if (!DUR || from === value) { el.textContent = fmt(value); return; }
+    d3.select(el).transition().duration(DUR).ease(d3.easeCubicOut)
+      .tween('text', () => { const i = d3.interpolateNumber(from, value); return t => { el.textContent = fmt(i(t)); }; })
+      .on('end', () => { el.textContent = fmt(value); });
+  };
+  const legend = (el, items) => {
+    el.replaceChildren();
+    for (const [color, label, line] of items) {
+      const s = document.createElement('span');
+      const sw = document.createElement('i'); sw.className = line ? 'fz-sw-line' : 'fz-sw'; if (!line) sw.style.background = color; else sw.style.borderTopColor = color;
+      s.append(sw, document.createTextNode(label)); el.appendChild(s);
+    }
+  };
+  const failed = (el) => {
+    el.replaceChildren();
+    const d = document.createElement('div');
+    d.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;min-height:inherit;height:100%';
+    const dot = document.createElement('span'); dot.style.cssText = 'width:.375rem;height:.375rem;border-radius:50%;background:var(--color-bad)';
+    const tx = document.createElement('span'); tx.textContent = 'Failed to load'; tx.style.cssText = 'color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)';
+    d.append(dot, tx); el.appendChild(d);
+  };
+  const measure = (svg, str) => {
+    const t = svg.append('text').attr('font-size', 12).text(str);
+    const w = t.node().getComputedTextLength(); t.remove(); return w;
+  };
+
+  // --- Month selector + play
+  function drawMonths(meses) {
+    const box = $('meses');
+    const keys = meses.map(m => m.mes).join(',');
+    if (box.dataset.keys !== keys) {
+      box.dataset.keys = keys; box.replaceChildren();
+      for (const m of meses) {
+        const b = document.createElement('button'); b.className = 'fz-pill'; b.textContent = m.label; b.dataset.mes = m.mes; b.id = 'mes-' + m.mes;
+        b.addEventListener('click', () => { stop(); select(m.mes); });
+        box.appendChild(b);
+      }
+      if (meses.length > 1) {
+        const p = document.createElement('button'); p.className = 'fz-pill fz-play'; p.id = 'play'; p.textContent = '▶ Animar meses';
+        p.addEventListener('click', () => playTimer ? stop() : play(meses.map(m => m.mes)));
+        box.appendChild(p);
+      }
+    }
+    for (const b of box.querySelectorAll('[data-mes]')) b.setAttribute('aria-pressed', String(b.dataset.mes === sel));
+  }
+  function select(m) { sel = m; render(); }
+  function play(keys) {
+    let i = 0; select(keys[0]);
+    $('play').textContent = '■ Parar';
+    playTimer = setInterval(() => { i++; if (i >= keys.length) return stop(); select(keys[i]); }, reduce ? 2500 : 1800);
+  }
+  function stop() { if (playTimer) clearInterval(playTimer); playTimer = null; const p = $('play'); if (p) p.textContent = '▶ Animar meses'; }
+
+  // --- Category bars (selected month vs previous)
+  function drawCats(el, cats, prevCats) {
+    const W = Math.max(280, el.clientWidth);
+    const cur = cats.filter(c => c.mes === sel).sort((a, b) => b.total - a.total);
+    const prev = new Map(prevCats.map(c => [c.categoria, c.total]));
+    const rowH = 40, H = cur.length * rowH + 4;
+    let svg = d3.select(el).select('svg');
+    if (svg.empty()) svg = d3.select(el).append('svg').attr('width', '100%').attr('role', 'img').attr('aria-label', 'Gasto por categoria');
+    svg.attr('viewBox', `0 0 ${W} ${H}`).attr('height', H);
+    el.style.minHeight = H + 'px';
+    const valW = measure(svg, brl.format(d3.max(cur, c => c.total) || 0)) + 10;
+    const x = d3.scaleLinear([0, d3.max([...cur.map(c => c.total), ...prev.values()]) || 1], [0, W - valW - 4]);
+    const color = n => n === 'Fixo' ? dash.colors[0] : dash.colors[1];
+
+    const g = svg.selectAll('g.row').data(cur, d => d.categoria);
+    g.exit().transition().duration(DUR).style('opacity', 0).remove();
+    const ge = g.enter().append('g').attr('class', 'row').style('opacity', 0)
+      .attr('transform', (d, i) => `translate(0,${i * rowH})`);
+    ge.append('text').attr('class', 'nm').attr('y', 13).attr('font-size', 12).attr('fill', 'var(--color-fg)');
+    ge.append('rect').attr('class', 'bar').attr('y', 19).attr('height', 12).attr('rx', 4).attr('width', 0);
+    ge.append('line').attr('class', 'pv').attr('y1', 16).attr('y2', 34).attr('stroke', 'var(--color-fg-muted)').attr('stroke-width', 2).attr('stroke-linecap', 'round');
+    ge.append('text').attr('class', 'vl').attr('y', 30).attr('font-size', 12).attr('fill', 'var(--color-fg-muted)').style('font-variant-numeric', 'tabular-nums');
+    ge.append('rect').attr('class', 'hit').attr('width', W).attr('height', rowH).attr('fill', 'transparent');
+    const all = ge.merge(g);
+    all.transition().duration(DUR).ease(d3.easeCubicOut).style('opacity', 1).attr('transform', (d, i) => `translate(0,${i * rowH})`);
+    all.select('.nm').text(d => d.categoria);
+    all.select('.bar').attr('fill', d => color(d.natureza)).transition().duration(DUR).ease(d3.easeCubicOut).attr('width', d => Math.max(2, x(d.total)));
+    all.select('.pv').transition().duration(DUR)
+      .attr('x1', d => x(prev.get(d.categoria) || 0)).attr('x2', d => x(prev.get(d.categoria) || 0))
+      .style('opacity', d => prev.has(d.categoria) ? 1 : 0);
+    all.select('.vl').text(d => brl.format(d.total)).transition().duration(DUR).ease(d3.easeCubicOut).attr('x', d => x(d.total) + 6);
+    all.select('.hit').attr('width', W)
+      .on('mousemove', (e, d) => {
+        const lines = [[color(d.natureza), d.natureza, brl.format(d.total)]];
+        if (prev.has(d.categoria)) lines.push([null, 'Mês anterior', brl.format(prev.get(d.categoria))]);
+        if (d.economia > 0) lines.push([null, 'Corte sugerido', brl.format(d.economia)]);
+        showTip(el, e, d.categoria, lines);
+      })
+      .on('mouseleave', () => hideTip(el));
+  }
+
+  // --- Monthly bars: fixed vs variable with salary + ceiling
+  function drawFV(el, rows) {
+    const W = Math.max(280, el.clientWidth), H = 240;
+    let svg = d3.select(el).select('svg');
+    if (svg.empty()) svg = d3.select(el).append('svg').attr('width', '100%').attr('role', 'img').attr('aria-label', 'Fixo e variável por mês');
+    svg.attr('viewBox', `0 0 ${W} ${H}`).attr('height', H);
+    const maxY = d3.max(rows, r => Math.max(r.salario, r.total)) * 1.1;
+    const y = d3.scaleLinear([0, maxY], [H - 24, 10]).nice();
+    const ticks = y.ticks(4);
+    const ml = d3.max(ticks, t => measure(svg, mil(t))) + 10;
+    const endLbl = measure(svg, 'Teto (80%)') + 8;
+    const x = d3.scaleBand(rows.map(r => r.mes), [ml, W - endLbl]).padding(0.35);
+    const bw = Math.min(56, x.bandwidth()), off = (x.bandwidth() - bw) / 2;
+
+    const ax = svg.selectAll('g.ax').data([0]).join('g').attr('class', 'ax');
+    ax.selectAll('line').data(ticks).join('line').attr('x1', ml).attr('x2', W).attr('y1', t => y(t)).attr('y2', t => y(t)).attr('stroke', 'var(--cds-chart-grid)');
+    ax.selectAll('text.t').data(ticks).join('text').attr('class', 't').attr('x', ml - 8).attr('y', t => y(t) + 4).attr('text-anchor', 'end').attr('font-size', 12).attr('fill', 'var(--color-fg-muted)').text(mil);
+    ax.selectAll('text.m').data(rows, r => r.mes).join('text').attr('class', 'm').attr('x', r => x(r.mes) + x.bandwidth() / 2).attr('y', H - 6).attr('text-anchor', 'middle').attr('font-size', 12)
+      .attr('fill', r => r.mes === sel ? 'var(--color-fg)' : 'var(--color-fg-muted)').text(r => r.label);
+
+    const segs = rows.flatMap(r => [
+      { key: r.mes + 'f', r, y0: 0, y1: r.fixo, c: dash.colors[0] },
+      { key: r.mes + 'v', r, y0: r.fixo, y1: r.total, c: dash.colors[1] }
+    ]);
+    svg.selectAll('rect.seg').data(segs, d => d.key).join(
+      en => en.append('rect').attr('class', 'seg').attr('y', y(0)).attr('height', 0)
+    ).attr('x', d => x(d.r.mes) + off).attr('width', bw).attr('fill', d => d.c).attr('rx', 3)
+      .attr('opacity', d => d.r.mes === sel ? 1 : 0.4)
+      .transition().duration(DUR).ease(d3.easeCubicOut)
+      .attr('y', d => y(d.y1) + 1).attr('height', d => Math.max(0, y(d.y0) - y(d.y1) - 2));
+
+    const refs = rows.flatMap(r => [
+      { key: r.mes + 's', r, v: r.salario, c: 'var(--cds-chart-reference)', dash: null },
+      { key: r.mes + 't', r, v: r.salario - r.meta, c: 'var(--color-ok)', dash: '5 4' }
+    ]);
+    svg.selectAll('line.ref').data(refs, d => d.key).join('line').attr('class', 'ref')
+      .attr('stroke', d => d.c).attr('stroke-width', 2).attr('stroke-dasharray', d => d.dash)
+      .attr('x1', d => x(d.r.mes) + off - 8).attr('x2', d => x(d.r.mes) + off + bw + 8)
+      .transition().duration(DUR).attr('y1', d => y(d.v)).attr('y2', d => y(d.v));
+    const last = rows[rows.length - 1];
+    const lbls = [{ k: 's', v: last.salario, t: 'Salário' }, { k: 't', v: last.salario - last.meta, t: 'Teto (80%)' }];
+    if (Math.abs(y(lbls[0].v) - y(lbls[1].v)) < 14) lbls[1].dy = 14;
+    svg.selectAll('text.rl').data(lbls, d => d.k).join('text').attr('class', 'rl').attr('font-size', 12).attr('fill', 'var(--color-fg-muted)')
+      .attr('x', x(last.mes) + off + bw + 12).attr('y', d => y(d.v) + 4 + (d.dy || 0)).text(d => d.t);
+
+    svg.selectAll('rect.hit').data(rows, r => r.mes).join('rect').attr('class', 'hit').attr('fill', 'transparent')
+      .attr('x', r => x(r.mes)).attr('width', x.bandwidth()).attr('y', 0).attr('height', H)
+      .style('cursor', 'pointer')
+      .on('click', (e, r) => { stop(); select(r.mes); })
+      .on('mousemove', (e, r) => showTip(el, e, r.label, [
+        [dash.colors[0], 'Fixo', brl.format(r.fixo)], [dash.colors[1], 'Variável', brl.format(r.variavel)],
+        [null, 'Total', brl.format(r.total)], [null, 'Salário', brl.format(r.salario)]]))
+      .on('mouseleave', () => hideTip(el));
+  }
+
+  // --- Savings per month vs 20% goal
+  function drawSV(el, rows) {
+    const W = Math.max(280, el.clientWidth), H = 220;
+    let svg = d3.select(el).select('svg');
+    if (svg.empty()) svg = d3.select(el).append('svg').attr('width', '100%').attr('role', 'img').attr('aria-label', 'Quanto sobrou por mês');
+    svg.attr('viewBox', `0 0 ${W} ${H}`).attr('height', H);
+    const lo = Math.min(0, d3.min(rows, r => r.sobra));
+    const y = d3.scaleLinear([lo, d3.max(rows, r => Math.max(r.meta, r.sobra)) * 1.25], [H - 24, 22]).nice();
+    const ticks = y.ticks(4);
+    const ml = d3.max(ticks, t => measure(svg, mil(t))) + 10;
+    const endLbl = measure(svg, 'Meta 20%') + 8;
+    const x = d3.scaleBand(rows.map(r => r.mes), [ml, W - endLbl]).padding(0.35);
+    const bw = Math.min(56, x.bandwidth()), off = (x.bandwidth() - bw) / 2;
+    const ax = svg.selectAll('g.ax').data([0]).join('g').attr('class', 'ax');
+    ax.selectAll('line').data(ticks).join('line').attr('x1', ml).attr('x2', W).attr('y1', t => y(t)).attr('y2', t => y(t)).attr('stroke', t => t === 0 ? 'var(--cds-chart-axis)' : 'var(--cds-chart-grid)');
+    ax.selectAll('text.t').data(ticks).join('text').attr('class', 't').attr('x', ml - 8).attr('y', t => y(t) + 4).attr('text-anchor', 'end').attr('font-size', 12).attr('fill', 'var(--color-fg-muted)').text(mil);
+    ax.selectAll('text.m').data(rows, r => r.mes).join('text').attr('class', 'm').attr('x', r => x(r.mes) + x.bandwidth() / 2).attr('y', H - 6).attr('text-anchor', 'middle').attr('font-size', 12)
+      .attr('fill', r => r.mes === sel ? 'var(--color-fg)' : 'var(--color-fg-muted)').text(r => r.label);
+    const col = r => r.sobra >= r.meta ? 'var(--color-ok)' : 'var(--cds-chart-status-critical)';
+    svg.selectAll('rect.b').data(rows, r => r.mes).join(en => en.append('rect').attr('class', 'b').attr('y', y(0)).attr('height', 0))
+      .attr('x', r => x(r.mes) + off).attr('width', bw).attr('rx', 4).attr('fill', col).attr('opacity', r => r.mes === sel ? 1 : 0.45)
+      .transition().duration(DUR).ease(d3.easeCubicOut)
+      .attr('y', r => y(Math.max(0, r.sobra))).attr('height', r => Math.abs(y(r.sobra) - y(0)));
+    svg.selectAll('text.v').data(rows, r => r.mes).join('text').attr('class', 'v').attr('text-anchor', 'middle').attr('font-size', 12).attr('fill', 'var(--color-fg)')
+      .attr('x', r => x(r.mes) + x.bandwidth() / 2).transition().duration(DUR).attr('y', r => y(Math.max(0, r.sobra)) - 6).text(r => pct.format(r.taxa));
+    svg.selectAll('line.meta').data(rows, r => r.mes).join('line').attr('class', 'meta').attr('stroke', 'var(--color-fg-muted)').attr('stroke-width', 2).attr('stroke-dasharray', '5 4')
+      .attr('x1', r => x(r.mes) + off - 8).attr('x2', r => x(r.mes) + off + bw + 8).transition().duration(DUR).attr('y1', r => y(r.meta)).attr('y2', r => y(r.meta));
+    const last = rows[rows.length - 1];
+    svg.selectAll('text.rl').data([last]).join('text').attr('class', 'rl').attr('font-size', 12).attr('fill', 'var(--color-fg-muted)')
+      .attr('x', x(last.mes) + off + bw + 12).attr('y', y(last.meta) + 4).text('Meta 20%');
+    svg.selectAll('rect.hit').data(rows, r => r.mes).join('rect').attr('class', 'hit').attr('fill', 'transparent')
+      .attr('x', r => x(r.mes)).attr('width', x.bandwidth()).attr('y', 0).attr('height', H).style('cursor', 'pointer')
+      .on('click', (e, r) => { stop(); select(r.mes); })
+      .on('mousemove', (e, r) => showTip(el, e, r.label, [[null, 'Sobrou', brl.format(r.sobra)], [null, 'Meta (20%)', brl.format(r.meta)], [null, 'Taxa', pct.format(r.taxa)]]))
+      .on('mouseleave', () => hideTip(el));
+  }
+
+  function drawCuts(cats, r) {
+    const list = $('cut-list'); list.replaceChildren();
+    const cuts = cats.filter(c => c.mes === sel && c.economia > 0).sort((a, b) => b.economia - a.economia);
+    for (const c of cuts) {
+      const li = document.createElement('li'); li.className = 'fz-cut fz-in';
+      const name = document.createElement('span'); name.className = 'fz-cut-name'; name.textContent = c.categoria;
+      const save = document.createElement('span'); save.className = 'fz-cut-save';
+      save.dataset.source = 'categorias'; save.dataset.field = 'economia'; save.dataset.where = where('chave', c.chave);
+      save.textContent = brl0.format(c.economia);
+      const meta = document.createElement('span'); meta.className = 'fz-cut-meta';
+      const tot = document.createElement('span'); tot.dataset.source = 'categorias'; tot.dataset.field = 'total'; tot.dataset.where = where('chave', c.chave); tot.textContent = brl.format(c.total);
+      const p = document.createElement('span'); p.dataset.source = 'categorias'; p.dataset.field = 'corte_pct'; p.dataset.where = where('chave', c.chave); p.textContent = pct.format(c.corte_pct);
+      meta.append('Gastou ', tot, ' · cortar ', p);
+      const how = document.createElement('span'); how.className = 'fz-cut-how'; how.textContent = COMO[c.categoria] || '';
+      li.append(name, save, meta, how); list.appendChild(li);
+    }
+    const v = $('cut-verdict');
+    if (r.gap <= 0) { v.textContent = 'A meta de 20% já foi batida neste mês.'; v.className = 'fz-note fz-ok'; }
+    else if (r.corte >= r.gap) { v.textContent = 'Cobre o que faltou para a meta.'; v.className = 'fz-note fz-ok'; }
+    else { v.textContent = 'Ainda não cobre o que faltou para a meta.'; v.className = 'fz-note fz-warn'; }
+  }
+
+  function drawTable(rows) {
+    const q = ($('busca').value || '').trim().toLowerCase();
+    let mes = rows.filter(r => r.mes === sel);
+    if (q) mes = mes.filter(r => (r.descricao + ' ' + r.categoria + ' ' + r.origem).toLowerCase().includes(q));
+    const key = sortK;
+    mes.sort((a, b) => key === 'valor' ? (Number(a.valor) - Number(b.valor)) * sortDir : String(a[key]).localeCompare(String(b[key]), 'pt-BR') * sortDir);
+    const tb = $('tabela').tBodies[0]; tb.replaceChildren();
+    for (const r of mes) {
+      const tr = document.createElement('tr'); tr.dataset.key = r.id;
+      const cells = [[r.data || '—', 'fz-hide-sm'], [r.descricao], [r.categoria], [r.natureza, 'fz-hide-sm'], [r.origem, 'fz-hide-sm'], [brl.format(Number(r.valor)), 'num']];
+      for (const [t, cls] of cells) { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = t; tr.appendChild(td); }
+      tb.appendChild(tr);
+    }
+    $('busca-info').textContent = mes.length + (mes.length === 1 ? ' lançamento' : ' lançamentos');
+    for (const th of $('tabela').querySelectorAll('th')) {
+      const k = th.querySelector('button').dataset.k;
+      if (k === sortK) th.setAttribute('aria-sort', sortDir < 0 ? 'descending' : 'ascending'); else th.removeAttribute('aria-sort');
+    }
+  }
+  $('busca').addEventListener('input', () => render());
+  for (const b of $('tabela').querySelectorAll('th button')) b.addEventListener('click', () => {
+    const k = b.dataset.k; if (sortK === k) sortDir *= -1; else { sortK = k; sortDir = k === 'valor' ? -1 : 1; } render();
+  });
+
+  function setWhere(id, mes) { $(id).dataset.where = where('mes', mes); }
+
+  function render() {
+    const R = dash.data('resumo'), C = dash.data('categorias'), L = dash.data('lancamentos');
+    const ids = ['k-total', 'k-sobra', 'k-meta', 'k-corte', 'takeaway'];
+    if (R.status !== 'ok' || !R.data.length) {
+      for (const id of ids) $(id).classList.toggle('dash-skeleton', R.status === 'loading');
+      if (R.status === 'error') { failed($('ch-fv')); failed($('ch-sv')); }
+      return;
+    }
+    const rows = [...R.data].sort((a, b) => a.mes.localeCompare(b.mes));
+    if (!sel || !rows.some(r => r.mes === sel)) sel = rows[rows.length - 1].mes;
+    const i = rows.findIndex(r => r.mes === sel), r = rows[i], p = rows[i - 1];
+    for (const id of ids) $(id).classList.remove('dash-skeleton');
+    drawMonths(rows);
+    $('nota-mes').textContent = r.nota || '';
+
+    for (const id of ['k-total', 'k-sobra', 'k-taxa', 'k-sal', 'k-meta', 'k-gap', 'k-corte', 'cut-total']) setWhere(id, r.mes);
+    countTo($('k-total'), r.total, v => brl.format(v));
+    countTo($('k-sobra'), r.sobra, v => brl.format(v));
+    countTo($('k-meta'), r.meta, v => brl.format(v));
+    countTo($('k-corte'), r.corte, v => brl.format(v));
+    $('k-taxa').textContent = pct.format(r.taxa);
+    $('k-sal').textContent = brl.format(r.salario);
+    $('k-gap').textContent = brl.format(r.gap);
+    $('cut-total').textContent = brl.format(r.corte);
+    $('k-gap-line').className = 'fz-kpi-sub ' + (r.gap > 0 ? 'fz-warn' : 'fz-ok');
+    $('k-sobra').className = 'fz-kpi-value ' + (r.sobra >= r.meta ? 'fz-ok' : '');
+    const sub = $('k-total-sub'); sub.replaceChildren();
+    if (p) {
+      const d = r.total - p.total, s = document.createElement('span');
+      s.className = d > 0 ? 'fz-up-bad' : 'fz-down-good';
+      s.textContent = (d > 0 ? '▲ +' : '▼ ') + brl.format(d) + ' (' + (d > 0 ? '+' : '') + pct.format(d / p.total) + ')';
+      sub.append(s, ' vs. ' + p.label);
+    } else sub.textContent = 'Primeiro mês registrado. A comparação começa no próximo.';
+
+    // Takeaway
+    const tk = $('takeaway'); tk.replaceChildren();
+    const mk = (field, text) => { const b = document.createElement('b'); b.dataset.source = 'resumo'; b.dataset.field = field; b.dataset.where = where('mes', r.mes); b.textContent = text; return b; };
+    tk.append('Em ' + r.label + ' sobraram ', mk('sobra', brl.format(r.sobra)), ', ', mk('taxa', pct.format(r.taxa)), ' do salário. ');
+    if (r.gap > 0) {
+      tk.append('Para guardar 20% faltaram ', mk('gap', brl.format(r.gap)), '. O problema não está nos fixos: os variáveis levaram ', mk('variavel_pct', pct.format(r.variavel_pct)), ' do salário, e ', mk('pontual', brl.format(r.pontual)), ' foram gastos pontuais (viagem e avulsos).');
+    } else {
+      tk.append('A meta de 20% foi batida. Variáveis: ', mk('variavel_pct', pct.format(r.variavel_pct)), ' do salário.');
+    }
+
+    // Fixed/variable note
+    const fv = $('fv-note'); fv.replaceChildren();
+    const mk2 = mk;
+    fv.append('Em ' + r.label + ': fixos ', mk2('fixo', brl.format(r.fixo)), ' (', mk2('fixo_pct', pct.format(r.fixo_pct)), ' do salário), variáveis ', mk2('variavel', brl.format(r.variavel)), ' (', mk2('variavel_pct', pct.format(r.variavel_pct)), ').');
+
+    const sv = $('sv-note'); sv.replaceChildren();
+    sv.append('Guardar 20% de ', mk('salario', brl.format(r.salario)), ' é separar ', mk('meta', brl.format(r.meta)), ' no dia do pagamento, antes de gastar.');
+
+    legend($('leg-fv'), [[dash.colors[0], 'Fixo'], [dash.colors[1], 'Variável'], ['var(--cds-chart-reference)', 'Salário', true], ['var(--color-ok)', 'Teto para guardar 20%', true]]);
+    legend($('leg-sv'), [['var(--color-ok)', 'Meta batida'], ['var(--cds-chart-status-critical)', 'Abaixo da meta'], ['var(--color-fg-muted)', 'Meta 20%', true]]);
+    legend($('leg-cat'), [[dash.colors[0], 'Fixo'], [dash.colors[1], 'Variável']].concat(p ? [['var(--color-fg-muted)', p.label, true]] : []));
+
+    drawFV($('ch-fv'), rows);
+    drawSV($('ch-sv'), rows);
+    if (C.status === 'ok') {
+      drawCats($('ch-cat'), C.data, p ? C.data.filter(c => c.mes === p.mes) : []);
+      drawCuts(C.data, r);
+    } else if (C.status === 'error') failed($('ch-cat'));
+    if (L.status === 'ok') drawTable(L.data);
+    started = true;
+  }
+
+  dash.onData(render);
+})();
+</script>
